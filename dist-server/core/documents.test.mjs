@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {nextDocumentNumber,changeInvoiceStatus,validateTaxInvoice,paymentStatus} from './documents.mjs';
+test('ترقيم المستندات متسلسل ولا يعيد أرقامًا',()=>{assert.deepEqual(nextDocumentNumber({prefix:'INV',year:2026,lastSequence:41}),{sequence:42,number:'INV-2026-000042'})});
+test('حالات الفاتورة لا تسمح بتجاوز الاعتماد',()=>{assert.throws(()=>changeInvoiceStatus({current:'PENDING_APPROVAL',next:'POSTED',total:2000,approvalLimit:1000,actorCanApprove:true}),/حد اعتماد/);assert.equal(changeInvoiceStatus({current:'POSTED',next:'PARTIALLY_PAID'}),'PARTIALLY_PAID')});
+test('فاتورة المقاصة والضريبة تتحقق من بيانات الطرف',()=>{assert.throws(()=>validateTaxInvoice({invoiceType:'CLEARING',lines:[{}]}),/الرقم الضريبي/);assert.equal(validateTaxInvoice({invoiceType:'TAX',taxNumber:'562000001',taxRate:.16,lines:[{}]}).invoiceType,'TAX')});
+test('تحدد حالة الدفع حسب التخصيصات',()=>{assert.equal(paymentStatus({total:100,allocated:0}),'POSTED');assert.equal(paymentStatus({total:100,allocated:20}),'PARTIALLY_PAID');assert.equal(paymentStatus({total:100,allocated:100}),'PAID')});
